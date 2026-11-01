@@ -1,0 +1,38 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: redis-ui-deployment
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: redis-ui
+  template:
+    metadata:
+      labels:
+        app: redis-ui
+    spec:
+      containers:
+      - name: redis-ui
+        image: rediscommander/redis-commander:latest
+        ports:
+        - containerPort: 8081
+        env:
+        - name: REDIS_HOSTS
+          valueFrom:
+            configMapKeyRef:
+              key: REDIS_HOSTS
+              name: redis-config-map
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: redis-ui-service
+spec:
+  selector:
+    app: redis-ui
+  ports:
+  - port: 8081
+    targetPort: 8081
+
+

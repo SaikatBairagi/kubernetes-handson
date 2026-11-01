@@ -1,0 +1,263 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: nginx-data
+data:
+  index.html: |
+    <!DOCTYPE html>
+    <html lang="en">
+    <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>Inventory Dashboard</title>
+        <style>
+            :root {
+                --bg-color: #f4f6f9;
+                --card-bg: #ffffff;
+                --text-color: #333333;
+                --primary-color: #007bff;
+                --danger-color: #dc3545;
+                --badge-dev: #ffc107;
+                --border-color: #e0e0e0;
+            }
+
+            body {
+                font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+                background-color: var(--bg-color);
+                color: var(--text-color);
+                margin: 0;
+                padding: 20px;
+            }
+
+            .container {
+                max-width: 900px;
+                margin: 0 auto;
+            }
+
+            header {
+                display: flex;
+                justify-content: space-between;
+                align-items: center;
+                background: var(--card-bg);
+                padding: 20px 30px;
+                border-radius: 8px;
+                box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+                margin-bottom: 25px;
+            }
+
+            h1 {
+                margin: 0;
+                font-size: 1.8rem;
+            }
+
+            .env-badge {
+                background-color: var(--badge-dev);
+                color: #000;
+                font-weight: bold;
+                padding: 6px 12px;
+                border-radius: 20px;
+                font-size: 0.85rem;
+                letter-spacing: 0.5px;
+            }
+
+            .card {
+                background: var(--card-bg);
+                padding: 25px;
+                border-radius: 8px;
+                box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+                margin-bottom: 25px;
+            }
+
+            .form-group {
+                display: flex;
+                gap: 15px;
+                flex-wrap: wrap;
+            }
+
+            input {
+                flex: 1;
+                min-width: 150px;
+                padding: 10px 15px;
+                border: 1px solid var(--border-color);
+                border-radius: 4px;
+                font-size: 1rem;
+            }
+
+            input:focus {
+                outline: none;
+                border-color: var(--primary-color);
+            }
+
+            button {
+                cursor: pointer;
+                border: none;
+                border-radius: 4px;
+                padding: 10px 20px;
+                font-size: 1rem;
+                transition: background 0.2s ease;
+            }
+
+            .btn-add {
+                background-color: var(--primary-color);
+                color: white;
+            }
+
+            .btn-add:hover {
+                background-color: #0056b3;
+            }
+
+            .btn-remove {
+                background-color: var(--danger-color);
+                color: white;
+                padding: 6px 12px;
+                font-size: 0.85rem;
+            }
+
+            .btn-remove:hover {
+                background-color: #bd2130;
+            }
+
+            table {
+                width: 100%;
+                border-collapse: collapse;
+                margin-top: 10px;
+            }
+
+            th, td {
+                text-align: left;
+                padding: 12px 15px;
+                border-bottom: 1px solid var(--border-color);
+            }
+
+            th {
+                background-color: #f8f9fa;
+                font-weight: 600;
+            }
+
+            tr:hover {
+                background-color: #f1f1f1;
+            }
+
+            .empty-message {
+                text-align: center;
+                color: #777;
+                padding: 20px 0;
+            }
+        </style>
+    </head>
+    <body>
+
+        <div class="container">
+            <!-- Header Section -->
+            <header>
+                <h1>Welcome to Inventory Dashboard</h1>
+                <span class="env-badge">Environment: PROD</span>
+            </header>
+
+            <!-- Form to Add Items -->
+            <div class="card">
+                <h3>Add New Item</h3>
+                <form id="addItemForm" class="form-group">
+                    <input type="text" id="itemName" placeholder="Item Name" required>
+                    <input type="number" id="itemQuantity" placeholder="Quantity" min="1" required>
+                    <button type="submit" class="btn-add">Add Item</button>
+                </form>
+            </div>
+
+            <!-- Inventory List Section -->
+            <div class="card">
+                <h3>Current Inventory</h3>
+                <table>
+                    <thead>
+                        <tr>
+                            <th>ID</th>
+                            <th>Item Name</th>
+                            <th>Quantity</th>
+                            <th>Action</th>
+                        </tr>
+                    </thead>
+                    <tbody id="inventoryBody">
+                        <!-- Dynamic rows inserted here -->
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <script>
+            // Initial Dummy Data
+            let inventory = [
+                { id: 1, name: "Wireless Mouse", quantity: 25 },
+                { id: 2, name: "Mechanical Keyboard", quantity: 14 },
+                { id: 3, name: "27-inch Monitor", quantity: 8 },
+                { id: 4, name: "USB-C Cable", quantity: 50 }
+            ];
+
+            let nextId = 5;
+
+            // Function to render the table rows
+            function renderTable() {
+                const tableBody = document.getElementById("inventoryBody");
+                tableBody.innerHTML = "";
+
+                if (inventory.length === 0) {
+                    tableBody.innerHTML = `
+                        <tr>
+                            <td colspan="4" class="empty-message">No inventory items found. Add some above!</td>
+                        </tr>
+                    `;
+                    return;
+                }
+
+                inventory.forEach((item) => {
+                    const row = document.createElement("tr");
+                    row.innerHTML = `
+                        <td>#${item.id}</td>
+                        <td>${escapeHtml(item.name)}</td>
+                        <td>${item.quantity}</td>
+                        <td>
+                            <button class="btn-remove" onclick="removeItem(${item.id})">Remove</button>
+                        </td>
+                    `;
+                    tableBody.appendChild(row);
+                });
+            }
+
+            // Add Item Handler
+            document.getElementById("addItemForm").addEventListener("submit", function (e) {
+                e.preventDefault();
+                const nameInput = document.getElementById("itemName");
+                const quantityInput = document.getElementById("itemQuantity");
+
+                const newItem = {
+                    id: nextId++,
+                    name: nameInput.value.trim(),
+                    quantity: parseInt(quantityInput.value)
+                };
+
+                inventory.push(newItem);
+                renderTable();
+
+                // Clear inputs
+                nameInput.value = "";
+                quantityInput.value = "";
+            });
+
+            // Remove Item Handler
+            function removeItem(id) {
+                inventory = inventory.filter(item => item.id !== id);
+                renderTable();
+            }
+
+            // Helper to prevent basic XSS
+            function escapeHtml(text) {
+                const div = document.createElement('div');
+                div.textContent = text;
+                return div.innerHTML;
+            }
+
+            // Initial render on page load
+            renderTable();
+        </script>
+
+    </body>
+    </html>

@@ -1,0 +1,25 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: assignment-service-deploy
+spec:
+  selector:
+    matchLabels:
+      app: assignment-service
+  replicas: 1
+  template:
+    metadata:
+      labels:
+        app: assignment-service
+    spec:
+      containers:
+      - name: assignment-container
+        image: vinsdocker/k8s-deploy-assignment
+        ports:
+        - containerPort: 8080
+          name: "assignment-port"
+        env:
+        - name: "spring.redis.host"
+          value: "10.244.1.2"
+        - name: "spring.redis.port"
+          value: "6379"

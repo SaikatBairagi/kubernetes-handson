@@ -1,0 +1,16 @@
+apiVersion: v1
+kind: Pod
+metadata:
+  name: pod-assignment
+spec:
+  restartPolicy: OnFailure
+  containers:
+  - name: assignment
+    image: vinsdocker/k8s-pod-assignment
+    env:
+      - name: NUMBER
+        value: "5"
+    args:
+      - "MY_ARG"
+
+# This is an assignment asking to add the args and env to the pod else it will not run
