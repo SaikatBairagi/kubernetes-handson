@@ -1,0 +1,58 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: postgres-deployment
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: postgres-db
+  template:
+    metadata:
+      labels:
+        app: postgres-db
+    spec:
+      containers:
+      - name: postgres-db
+        image: postgres:16-alpine
+        ports:
+        - containerPort: 5432
+# Mount the volume inside the container
+        volumeMounts:
+        - name: postgres-data
+          mountPath: /var/lib/postgresql/data
+        env:
+        # Tell PostgreSQL where to store its data
+        - name: PGDATA
+          value: /var/lib/postgresql/data/pgdata
+        - name: "POSTGRES_DB"
+          valueFrom:
+            configMapKeyRef:
+              key: "DB_NAME"
+              name: "postgres-cm"
+        - name: "POSTGRES_USER"
+          valueFrom:
+            secretKeyRef:
+              key: "username"
+              name: "postgres-secrets"
+        - name: "POSTGRES_PASSWORD"
+          valueFrom:
+            secretKeyRef:
+              key: "password"
+              name: "postgres-secrets"
+      # Define the Pod-level volume
+      volumes:
+      - name: postgres-data
+        emptyDir: {}   
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: postres-svc
+spec:
+  selector:
+    app: postgres-db
+  ports:
+  - port: 5432
+    targetPort: 5432
+
